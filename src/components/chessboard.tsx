@@ -1,3 +1,4 @@
+
 import React, {useState, useEffect, useCallback, useRef} from 'react';
 import {Chess} from 'chess.js';
 import './chessboard.css';
@@ -206,21 +207,21 @@ const Chessboard: React.FC = () => {
     }
 
     try {
-       const move = {
-         from: sourceSquare,
-         to: targetSquare,
-         promotion: 'q', // Always promote to queen for simplicity
-       };
+      const move = {
+        from: sourceSquare,
+        to: targetSquare,
+        promotion: 'q', // Always promote to queen for simplicity
+      };
 
       // check move validity BEFORE applying it
       if (!game.move(move)) {
         console.error('Invalid move:', move);
         return;
       }
-       game.undo(); // Undo the test move
+      game.undo(); // Undo the test move
 
       // Apply the move
-       const result = game.move(move);
+      const result = game.move(move);
 
       if (result === null) {
         console.error('Invalid move:', move);
@@ -363,6 +364,16 @@ const Chessboard: React.FC = () => {
               </div>
             ))}
           </div>
+          {game.isGameOver() && (
+            <div className="text-lg font-semibold mt-2">
+              Game Over! {gameStatus}
+            </div>
+          )}
+          {!game.isGameOver() && (
+            <div className="text-md mt-2">
+              {gameStatus}
+            </div>
+          )}
            <Card className="w-full mt-4">
             <CardHeader>
               <CardTitle>Game Controls</CardTitle>
@@ -425,16 +436,6 @@ const Chessboard: React.FC = () => {
                   <div>Black Time:</div>
                   <div>{formatTime(blackTime)}</div>
                 </div>
-                {game.isGameOver() && (
-                  <div className="text-lg font-semibold">
-                    Game Over! {gameStatus}
-                  </div>
-                )}
-                 {!game.isGameOver() && (
-                   <div className="text-md">
-                     {gameStatus}
-                   </div>
-                 )}
                  <div className="flex flex-col">
                    <div className="text-sm font-medium">Move History:</div>
                    <ScrollArea className="h-[200px] w-full rounded-md border p-4 mt-2" ref={moveHistoryRef}>

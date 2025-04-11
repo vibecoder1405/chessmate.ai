@@ -28,7 +28,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-        <div className="mx-auto max-w-5xl py-4 px-6">
+        <div className="py-4 px-6">
           {children}
         </div>
       </ThemeProvider>
@@ -36,4 +36,3 @@ export default function RootLayout({
     </html>
   );
 }
-
