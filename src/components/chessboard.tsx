@@ -209,5 +209,3 @@ const Chessboard: React.FC = () => {
 };
 
 export default Chessboard;
-
-    
