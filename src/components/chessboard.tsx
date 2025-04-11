@@ -228,12 +228,15 @@ const Chessboard: React.FC = () => {
 
       setMoveHistory(prevHistory => [...prevHistory, result.san]);
       updateGameStatus();
+
+      // Move Stockfish move call inside the setTimeout
       setTimeout(() => {
         if (!game.isGameOver()) {
           handleStockfishMove();
         }
         setIsClockRunning(true);
       }, 500);
+
 
     } catch (e) {
       console.error('Error making move:', e);
