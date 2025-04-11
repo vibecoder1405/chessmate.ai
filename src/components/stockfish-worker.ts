@@ -56,4 +56,3 @@ onmessage = async (event: MessageEvent) => {
     };
   }
 };
-
