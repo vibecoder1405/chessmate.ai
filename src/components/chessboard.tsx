@@ -1,3 +1,4 @@
+"use client";
 
 import React, {useState, useEffect, useCallback, useRef} from 'react';
 import {Chess} from 'chess.js';
@@ -231,7 +232,7 @@ const Chessboard: React.FC = () => {
       setGame(new Chess(game.fen())); // Create a new Chess instance
       setFen(game.fen());
 
-      setIsWhiteTurn(!isWhiteTurn);
+      setIsWhiteTurn(false); //switch turn AFTER valid human move
       setIsClockRunning(false);
 
       setMoveHistory(prevHistory => [...prevHistory, result.san]);
@@ -277,7 +278,7 @@ const Chessboard: React.FC = () => {
           });
           setGame(new Chess(game.fen()));
           setFen(game.fen());
-          setIsWhiteTurn(true);
+          setIsWhiteTurn(true); // switch turn back to human AFTER AI move.
           updateGameStatus();
         } catch (e) {
           console.error('Error making Stockfish move:', e);
