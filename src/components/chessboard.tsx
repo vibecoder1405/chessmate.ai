@@ -207,19 +207,27 @@ const Chessboard: React.FC = () => {
     }
 
     try {
-      const move = {
-        from: sourceSquare,
-        to: targetSquare,
-        promotion: 'q', // Always promote to queen for simplicity
-      };
+       const move = {
+         from: sourceSquare,
+         to: targetSquare,
+         promotion: 'q', // Always promote to queen for simplicity
+       };
 
-      // Check if the move is valid before applying it
-      const result = game.move(move);
+      // check move validity BEFORE applying it
+      if (!game.move(move)) {
+        console.error('Invalid move:', move);
+        return;
+      }
+       game.undo(); // Undo the test move
+
+      // Apply the move
+       const result = game.move(move);
 
       if (result === null) {
         console.error('Invalid move:', move);
         return;
       }
+
       setGame(new Chess(game.fen())); // Create a new Chess instance
       setFen(game.fen());
 
