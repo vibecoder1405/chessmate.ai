@@ -12,12 +12,13 @@ interface SquareProps {
   piece: string | null;
   isDragging: boolean;
   isLegalMove: boolean;
+  game: Chess; // Pass the game instance as a prop
   handleDragStart: (event: React.DragEvent<HTMLDivElement>, sourceSquare: string) => void;
   handleDragOver: (event: React.DragEvent<HTMLDivElement>) => void;
   handleDrop: (event: React.DragEvent<HTMLDivElement>, targetSquare: string) => void;
   handleDragEnd: (event: React.DragEvent<HTMLDivElement>) => void;
 }
-const Square: React.FC<SquareProps> = ({file, rank, piece, isDragging, isLegalMove, handleDragStart, handleDragOver, handleDrop, handleDragEnd}) => {
+const Square: React.FC<SquareProps> = ({file, rank, piece, isDragging, isLegalMove, game, handleDragStart, handleDragOver, handleDrop, handleDragEnd}) => {
   const squareId = `${file}${rank}`;
   const isLight = (files.indexOf(file) + rank) % 2 === 0;
   const backgroundColor = isLegalMove ? 'rgba(128, 255, 128, 0.7)' : isLight ? '#eeeed2' : '#769656';
@@ -33,8 +34,8 @@ const Square: React.FC<SquareProps> = ({file, rank, piece, isDragging, isLegalMo
         fontSize: squareSize * 0.6,
         cursor: piece ? 'grab' : 'default',
       }}
-      draggable={!!piece}
-      onDragStart={e => piece ? handleDragStart(e, squareId) : null}
+      draggable={!!piece && !game.isGameOver()}
+      onDragStart={e => piece && !game.isGameOver() ? handleDragStart(e, squareId) : null}
       onDragOver={handleDragOver}
       onDrop={e => handleDrop(e, squareId)}
       onDragEnd={handleDragEnd}
@@ -63,6 +64,7 @@ const Chessboard: React.FC = () => {
   const [legalMoves, setLegalMoves] = useState<string[]>([]);
   const [stockfish, setStockfish] = useState<Stockfish | null>(null);
   const [difficulty, setDifficulty] = useState<'Easy' | 'Medium' | 'Hard' | 'Master'>('Medium');
+  const [gameStatus, setGameStatus] = useState<string>('');
 
   useEffect(() => {
     setFen(game.fen());
@@ -157,6 +159,8 @@ const Chessboard: React.FC = () => {
       }
       setGame(new Chess(game.fen())); // Create a new Chess instance
       setFen(game.fen());
+      updateGameStatus();
+
     } catch (e) {
       console.error('Error making move:', e);
     } finally {
@@ -177,7 +181,7 @@ const Chessboard: React.FC = () => {
   };
 
   const handleStockfishMove = useCallback(async () => {
-    if (stockfish) {
+    if (stockfish && !game.isGameOver()) {
       const bestMove = await stockfish.getBestMove(game.fen());
       if (bestMove) {
         try {
@@ -188,12 +192,25 @@ const Chessboard: React.FC = () => {
           });
           setGame(new Chess(game.fen()));
           setFen(game.fen());
+          updateGameStatus();
         } catch (e) {
           console.error('Error making Stockfish move:', e);
         }
       }
     }
   }, [game, stockfish]);
+
+  const updateGameStatus = () => {
+    if (game.isCheckmate()) {
+      setGameStatus('Checkmate!');
+    } else if (game.isDraw()) {
+      setGameStatus('Stalemate!');
+    } else if (game.isCheck()) {
+      setGameStatus('Check!');
+    } else {
+      setGameStatus('');
+    }
+  };
 
   return (
     <div>
@@ -213,6 +230,7 @@ const Chessboard: React.FC = () => {
                   piece={piece ? handlePieceUnicode(piece) : null}
                   isDragging={draggingPiece !== null}
                   isLegalMove={isLegalMove}
+                  game={game} // Pass the game instance here
                   handleDragStart={handleDragStart}
                   handleDragOver={handleDragOver}
                   handleDrop={handleDrop}
@@ -229,9 +247,19 @@ const Chessboard: React.FC = () => {
         <option value="Hard">Hard</option>
         <option value="Master">Master</option>
       </select>
-      <button onClick={handleStockfishMove} disabled={!stockfish}>
+      <button onClick={handleStockfishMove} disabled={!stockfish || game.isGameOver()}>
         Make Stockfish Move
       </button>
+      {game.isGameOver() && (
+        <div>
+          Game Over! {gameStatus}
+        </div>
+      )}
+       {!game.isGameOver() && (
+        <div>
+           {gameStatus}
+        </div>
+      )}
     </div>
   );
 };
