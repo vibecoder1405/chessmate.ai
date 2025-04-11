@@ -1,5 +1,7 @@
+"use client";
 
 import {ThemeToggle} from "@/components/theme-toggle";
+import Chessboard from "@/components/chessboard";
 
 export default function Home() {
   return (
@@ -12,7 +14,7 @@ export default function Home() {
           <ThemeToggle />
         </div>
       </div>
+      <Chessboard />
     </main>
   );
 }
-
