@@ -62,6 +62,7 @@ const Chessboard: React.FC = () => {
   const [sourceSquare, setSourceSquare] = useState<string | null>(null);
   const [legalMoves, setLegalMoves] = useState<string[]>([]);
   const [stockfish, setStockfish] = useState<Stockfish | null>(null);
+  const [difficulty, setDifficulty] = useState<'Easy' | 'Medium' | 'Hard' | 'Master'>('Medium');
 
   useEffect(() => {
     setFen(game.fen());
@@ -71,14 +72,31 @@ const Chessboard: React.FC = () => {
     const sf = new Stockfish();
 
     sf.load().then(() => {
-      sf.setOptions({SkillLevel: '10'});
+      setStockfishDifficulty(sf, difficulty);
       setStockfish(sf);
     });
 
     return () => {
       sf.terminate();
     };
-  }, []);
+  }, [difficulty]);
+
+  const setStockfishDifficulty = (sf: Stockfish, difficulty: 'Easy' | 'Medium' | 'Hard' | 'Master') => {
+    switch (difficulty) {
+      case 'Easy':
+        sf.setOptions({SkillLevel: '5', Depth: '2'});
+        break;
+      case 'Medium':
+        sf.setOptions({SkillLevel: '10', Depth: '5'});
+        break;
+      case 'Hard':
+        sf.setOptions({SkillLevel: '15', Depth: '10'});
+        break;
+      case 'Master':
+        sf.setOptions({SkillLevel: '20', Depth: '15'});
+        break;
+    }
+  };
 
   const handlePieceUnicode = (piece: string) => {
     switch (piece) {
@@ -205,6 +223,12 @@ const Chessboard: React.FC = () => {
           </div>
         ))}
       </div>
+      <select value={difficulty} onChange={(e) => setDifficulty(e.target.value as any)}>
+        <option value="Easy">Easy</option>
+        <option value="Medium">Medium</option>
+        <option value="Hard">Hard</option>
+        <option value="Master">Master</option>
+      </select>
       <button onClick={handleStockfishMove} disabled={!stockfish}>
         Make Stockfish Move
       </button>
