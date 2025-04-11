@@ -1,4 +1,3 @@
-'use client';
 import React, {useState, useEffect, useCallback, useRef} from 'react';
 import {Chess} from 'chess.js';
 import './chessboard.css';
@@ -40,7 +39,7 @@ const Square: React.FC<SquareProps> = ({file, rank, piece, isDragging, isLegalMo
         height: squareSize,
         backgroundColor: backgroundColor,
         fontSize: squareSize * 0.6,
-        cursor: piece ? 'grab' : 'default',
+        cursor: piece && !game.isGameOver() ? 'grab' : 'default',
       }}
       draggable={!!piece && !game.isGameOver()}
       onDragStart={e => piece && !game.isGameOver() ? handleDragStart(e, squareId) : null}
