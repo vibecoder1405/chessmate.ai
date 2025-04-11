@@ -56,7 +56,7 @@ const Square: React.FC<SquareProps> = ({file, rank, piece, isDragging, isLegalMo
 };
 
 const Chessboard: React.FC = () => {
-  const [game, setGame] = useState(new Chess());
+  const [game, setGame] = useState(new Chess('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'));
   const [fen, setFen] = useState(game.fen());
   const [draggingPiece, setDraggingPiece] = useState<string | null>(null);
   const [sourceSquare, setSourceSquare] = useState<string | null>(null);
@@ -131,18 +131,14 @@ const Chessboard: React.FC = () => {
       };
 
       // Check if the move is valid before applying it
-      if (game.validate_fen(game.fen())) {
-        const result = game.move(move);
+      const result = game.move(move);
 
-        if (result === null) {
-          console.error('Invalid move:', move);
-          return;
-        }
-        setGame(new Chess(game.fen())); // Create a new Chess instance
-        setFen(game.fen());
-      } else {
-        console.error('Invalid FEN before move.');
+      if (result === null) {
+        console.error('Invalid move:', move);
+        return;
       }
+      setGame(new Chess(game.fen())); // Create a new Chess instance
+      setFen(game.fen());
     } catch (e) {
       console.error('Error making move:', e);
     } finally {
