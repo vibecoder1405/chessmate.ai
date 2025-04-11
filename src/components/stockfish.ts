@@ -9,7 +9,7 @@ class Stockfish {
   private isReady: boolean;
 
   constructor() {
-    this.worker = new Worker(new URL('./stockfish-worker', import.meta.url));
+    this.worker = new Worker('/stockfish.worker.js');
     this.isReady = false;
     this.worker.onmessage = event => {
       if (event.data.type === 'readyOk') {
@@ -64,5 +64,3 @@ class Stockfish {
 }
 
 export default Stockfish;
-
-    
