@@ -7,7 +7,8 @@
  *  This worker receives messages from the main thread, interacts with the Stockfish engine, and sends back the results.
  */
 
-import stockfish from './stockfish.wasm.js?url';
+// Changed the import path to be relative to the public directory if needed, otherwise keep it as is
+import stockfish from 'public/stockfish.wasm.js?url';
 
 let sf: any;
 
@@ -56,3 +57,4 @@ onmessage = async (event: MessageEvent) => {
     };
   }
 };
+
