@@ -8,7 +8,7 @@
  */
 
 // Changed the import path to be relative to the component's directory if needed, otherwise keep it as is
-import stockfish from 'public/stockfish.wasm.js?url';
+import stockfish from 'stockfish.wasm.js?url';
 
 let sf: any;
 
