@@ -119,21 +119,29 @@ const Chessboard: React.FC = () => {
     event.preventDefault();
 
     if (!sourceSquare) {
+      console.error('No source square specified.');
       return;
     }
 
     try {
-      const move = game.move({
+      const move = {
         from: sourceSquare,
         to: targetSquare,
         promotion: 'q', // Always promote to queen for simplicity
-      });
+      };
 
-      if (move) {
+      // Check if the move is valid before applying it
+      if (game.validate_fen(game.fen())) {
+        const result = game.move(move);
+
+        if (result === null) {
+          console.error('Invalid move:', move);
+          return;
+        }
         setGame(new Chess(game.fen())); // Create a new Chess instance
         setFen(game.fen());
       } else {
-        console.log('Illegal move');
+        console.error('Invalid FEN before move.');
       }
     } catch (e) {
       console.error('Error making move:', e);
