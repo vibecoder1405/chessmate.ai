@@ -254,7 +254,7 @@ const Square: React.FC < SquareProps > = ({
         case 'bN':
           return '♞';
         case 'bP':
-          return '♟︎';
+          return '♟';
         default:
           return '';
       }
