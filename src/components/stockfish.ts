@@ -5,19 +5,23 @@
  */
 
 class Stockfish {
-  private worker: Worker;
-  private isReady: boolean;
+  private worker!: Worker;
+  private isReady: boolean = false;
 
   constructor() {
-    this.worker = new Worker('/stockfish.worker.js');
-    this.isReady = false;
-    this.worker.onmessage = event => {
-      if (event.data.type === 'readyOk') {
-        this.isReady = true;
-        console.log('Stockfish is ready!');
-      }
-    };
-    this.worker.postMessage({type: 'isReady'});
+    if (typeof window !== 'undefined') {
+      // Use dynamic import for Next.js compatibility
+      const workerUrl = new URL('/stockfish.worker.js', window.location.origin);
+      this.worker = new Worker(workerUrl);
+      this.isReady = false;
+      this.worker.onmessage = event => {
+        if (event.data.type === 'readyOk') {
+          this.isReady = true;
+          console.log('Stockfish is ready!');
+        }
+      };
+      this.worker.postMessage({type: 'isReady'});
+    }
   }
 
   async load(): Promise<void> {

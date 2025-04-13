@@ -80,7 +80,7 @@ const Square: React.FC < SquareProps > = ({
           height: squareSize,
           backgroundColor: backgroundColor,
           fontSize: squareSize * 0.6,
-          cursor: piece && !game.isGameOver() ? 'grab' : 'default',
+          cursor: piece && !game.isGameOver() && game.turn() === 'w' ? 'grab' : 'default',
         }
       }
       draggable = {
@@ -99,6 +99,9 @@ const Square: React.FC < SquareProps > = ({
         handleDragEnd
       } > {
         piece && < span className = "piece"
+        data-piece = {
+          piece
+        }
         style = {
           {
             opacity: isDragging ? 0.5 : 1,
@@ -260,118 +263,76 @@ const Square: React.FC < SquareProps > = ({
       }
     };
 
-    const handleDragStart = (event: React.DragEvent < HTMLDivElement > , sourceSquare: string) => {
-      if (!isClockRunning) setIsClockRunning(true);
-      const piece = game.get(sourceSquare) ?.type;
-      if (piece) {
-        setDraggingPiece(piece);
-        setSourceSquare(sourceSquare);
-        const moves = game.moves({
-          square: sourceSquare,
-          verbose: true
-        });
-        const targetSquares = moves.map(move => move.to);
-        setLegalMoves(targetSquares);
-      } else {
-        event.preventDefault();
-      }
-    };
+    const handleDragStart = useCallback((event: React.DragEvent<HTMLDivElement>, sourceSquare: string) => {
+      if (isStockfishThinking) return;
+      setSourceSquare(sourceSquare);
+      setDraggingPiece(sourceSquare);
+      const moves = game.moves({ square: sourceSquare });
+      setLegalMoves(moves.map(move => move.to));
+    }, [game, isStockfishThinking]);
 
-    const handleDragOver = (event: React.DragEvent < HTMLDivElement > ) => {
+    const handleDragOver = useCallback((event: React.DragEvent<HTMLDivElement>) => {
       event.preventDefault();
-    };
+    }, []);
 
-    const handleDrop = (event: React.DragEvent < HTMLDivElement > , targetSquare: string) => {
-      event.preventDefault();
+    const makeAIMove = useCallback(async () => {
+      if (!stockfish || game.turn() !== 'b' || game.isGameOver()) return;
 
-      if (!sourceSquare) {
-        console.error('No source square specified.');
-        return;
-      }
-
+      setIsStockfishThinking(true);
       try {
-        const move = {
-          from: sourceSquare,
-          to: targetSquare,
-          promotion: 'q', // Always promote to queen for simplicity
-        };
-
-        // check move validity BEFORE applying it
-        if (!game.move(move)) {
-          console.error('Invalid move:', move);
-          return;
-        }
-        game.undo(); // Undo the test move
-
-        // Apply the move
-        const result = game.move(move);
-
-        if (result === null) {
-          console.error('Invalid move:', move);
-          return;
-        }
-
-        setGame(new Chess(game.fen())); // Create a new Chess instance
-        setFen(game.fen());
-
-        setIsWhiteTurn(false); //switch turn AFTER valid human move
-        setIsClockRunning(false);
-
-        setMoveHistory(prevHistory => [...prevHistory, result.san]);
-        updateGameStatus();
-
-        // Move Stockfish move call inside the setTimeout
-        setIsStockfishThinking(true); // Disable input while Stockfish is thinking
-        setTimeout(() => {
-          if (!game.isGameOver()) {
-            handleStockfishMove();
+        const bestMove = await stockfish.getBestMove(game.fen());
+        if (bestMove) {
+          const move = game.move(bestMove);
+          if (move) {
+            setGame(new Chess(game.fen()));
+            setMoveHistory(prev => [...prev, move.san]);
+            updateGameStatus();
           }
-          setIsClockRunning(true);
-          setIsStockfishThinking(false); // Enable input after Stockfish is done thinking
-        }, 500);
-
-
-      } catch (e) {
-        console.error('Error making move:', e);
+        }
+      } catch (error) {
+        console.error('Error making AI move:', error);
       } finally {
-        setDraggingPiece(null);
+        setIsStockfishThinking(false);
+      }
+    }, [game, stockfish]);
+
+    const handleDrop = useCallback((event: React.DragEvent<HTMLDivElement>, targetSquare: string) => {
+      event.preventDefault();
+      if (!sourceSquare || isStockfishThinking) return;
+
+      const move = game.move({
+        from: sourceSquare,
+        to: targetSquare,
+        promotion: 'q'
+      });
+
+      if (move) {
+        setGame(new Chess(game.fen()));
+        setMoveHistory(prev => [...prev, move.san]);
+        updateGameStatus();
         setSourceSquare(null);
         setLegalMoves([]);
-      }
-    };
 
-    const handleDragEnd = (event: React.DragEvent < HTMLDivElement > ) => {
+        if (!game.isGameOver()) {
+          makeAIMove();
+        }
+      }
+    }, [game, sourceSquare, makeAIMove, isStockfishThinking]);
+
+    const handleDragEnd = useCallback((event: React.DragEvent<HTMLDivElement>) => {
       setDraggingPiece(null);
       setSourceSquare(null);
       setLegalMoves([]);
-    };
+    }, []);
 
-    const getPiece = (file: string, rank: number) => {
-      return game.get(`${file}${rank}`) ?.color === 'w' ? 'w' + game.get(`${file}${rank}`) ?.type.toUpperCase() : game.get(`${file}${rank}`) ?.color === 'b' ? 'b' + game.get(`${file}${rank}`) ?.type.toUpperCase() : null;
-    };
+    const getPiece = useCallback((file: string, rank: number): string | null => {
+      const square = `${file}${rank}`;
+      const piece = game.get(square);
+      if (!piece) return null;
+      return `${piece.color}${piece.type.toUpperCase()}`;
+    }, [game]);
 
-    const handleStockfishMove = useCallback(async () => {
-      if (stockfish && !game.isGameOver()) {
-        const bestMove = await stockfish.getBestMove(game.fen());
-        if (bestMove) {
-          try {
-            game.move({
-              from: bestMove.substring(0, 2),
-              to: bestMove.substring(2, 4),
-              promotion: 'q',
-            });
-            setGame(new Chess(game.fen()));
-            setFen(game.fen());
-            setIsWhiteTurn(true); // switch turn back to human AFTER AI move.
-            updateGameStatus();
-          } catch (e) {
-            console.error('Error making Stockfish move:', e);
-          }
-        }
-      }
-    }, [game, stockfish, isWhiteTurn]);
-
-    const updateGameStatus = () => {
+    const updateGameStatus = useCallback(() => {
       if (game.isCheckmate()) {
         setGameStatus('Checkmate!');
       } else if (game.isDraw()) {
@@ -381,19 +342,9 @@ const Square: React.FC < SquareProps > = ({
       } else {
         setGameStatus('');
       }
-    };
+    }, [game]);
 
-    const handleUndoMove = () => {
-      if (difficulty === 'Easy' || difficulty === 'Medium') {
-        game.undo();
-        setGame(new Chess(game.fen()));
-        setFen(game.fen());
-        setMoveHistory(prevHistory => prevHistory.slice(0, -1));
-        updateGameStatus();
-      }
-    };
-
-    const handleRestartGame = () => {
+    const handleRestartGame = useCallback(() => {
       setGame(new Chess('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'));
       setFen(game.fen());
       setMoveHistory([]);
@@ -404,13 +355,21 @@ const Square: React.FC < SquareProps > = ({
       setIsClockRunning(false);
       if (whiteTimerRef.current) clearTimeout(whiteTimerRef.current);
       if (blackTimerRef.current) clearTimeout(blackTimerRef.current);
-    };
+    }, []);
 
-    const formatTime = (timeInSeconds: number): string => {
+    const handleUndoMove = useCallback(() => {
+      if (moveHistory.length === 0) return;
+      game.undo();
+      setGame(new Chess(game.fen()));
+      setMoveHistory(prev => prev.slice(0, -1));
+      updateGameStatus();
+    }, [game, moveHistory, updateGameStatus]);
+
+    const formatTime = useCallback((timeInSeconds: number): string => {
       const minutes = Math.floor(timeInSeconds / 60);
       const seconds = timeInSeconds % 60;
       return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
-    };
+    }, []);
 
     return ( <
       div className = "flex flex-col items-center justify-center p-4 w-full" >

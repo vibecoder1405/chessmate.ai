@@ -11,7 +11,7 @@ let sf;
 
 async function loadStockfish() {
   if (!sf) {
-    const stockfishModule = await import('/stockfish.js');
+    const stockfishModule = await import('./stockfish.js');
     sf = new stockfishModule.default();
     console.log('Stockfish engine loaded.');
   }
@@ -54,4 +54,4 @@ onmessage = async (event) => {
       }
     };
   }
-};
+}; 
